@@ -1,0 +1,331 @@
+@startuml
+hide empty members
+skinparam classAttributeIconSize 0
+
+package com.example.demo.common {
+  class AuthInterceptor {
+    - ObjectMapper objectMapper
+    + preHandle(HttpServletRequest, HttpServletResponse, Object) : boolean
+  }
+  class SessionKeys {
+    + USER_ID : String
+    + USERNAME : String
+    + ROLE_ID : String
+    + ROLE_CODE : String
+    + ROLE_LEVEL : String
+    + EMPLOYEE_ID : String
+    + PERMISSIONS : String
+  }
+  class DataInitializer {
+    - DepartmentMapper departmentMapper
+    - PositionMapper positionMapper
+    - EmployeeMapper employeeMapper
+    - SysUserMapper sysUserMapper
+    - SysRoleMapper sysRoleMapper
+    + run() : void
+  }
+  class GlobalExceptionHandler {
+    + handleIllegalArgument(IllegalArgumentException) : Result<Void>
+    + handleException(Exception) : Result<Void>
+  }
+  class Result {
+    - int code
+    - String message
+    - T data
+  }
+  class WebConfig {
+    + addCorsMappings(CorsRegistry) : void
+    + addInterceptors(InterceptorRegistry) : void
+  }
+}
+
+package com.example.demo.controller {
+  class AuthController {
+    + login(LoginRequest, HttpSession) : Result<LoginResponse>
+    + me(HttpSession) : Result<LoginResponse>
+  }
+  class EmployeeLeaveController {
+    + create(EmployeeLeaveCreateDTO) : Result<EmployeeLeave>
+    + page(Long, LocalDate, LocalDate, int, int) : Result<Page<EmployeeLeaveVO>>
+    + restore(Long) : Result<Void>
+  }
+  class EmployeeController {
+    + page(String, Long, Long, String, int, int) : Result<Page<EmployeeVO>>
+    + create(EmployeeCreateDTO) : Result<Employee>
+    + update(Long, EmployeeUpdateDTO) : Result<Employee>
+    + delete(Long) : Result<Void>
+  }
+  class DepartmentController {
+    + page(String, int, int) : Result<Page<Department>>
+    + listAll() : Result<List<Department>>
+    + create(DepartmentCreateDTO) : Result<Department>
+    + update(Long, DepartmentUpdateDTO) : Result<Department>
+    + delete(Long) : Result<Void>
+  }
+  class PositionController {
+    + page(String, int, int) : Result<Page<Position>>
+    + listAll() : Result<List<Position>>
+    + create(PositionCreateDTO) : Result<Position>
+    + update(Long, PositionUpdateDTO) : Result<Position>
+    + delete(Long) : Result<Void>
+  }
+  class PositionTransferController {
+    + create(PositionTransferCreateDTO) : Result<PositionTransfer>
+    + page(Long, LocalDate, LocalDate, int, int) : Result<Page<PositionTransferVO>>
+  }
+  class ReportController {
+    + hireReport(LocalDate, LocalDate) : Result<List<HireReportVO>>
+    + leaveReport(LocalDate, LocalDate) : Result<List<LeaveReportVO>>
+    + transferReport(LocalDate, LocalDate) : Result<List<TransferReportVO>>
+  }
+  class SysUserController {
+    + page(String, String, int, int) : Result<Page<SysUserVO>>
+    + resetPassword(Long, ResetPasswordDTO) : Result<Void>
+  }
+  class SysRoleController {
+    + list(String) : Result<List<SysRole>>
+    + create(SysRoleCreateDTO) : Result<SysRole>
+    + update(Long, SysRoleUpdateDTO) : Result<SysRole>
+    + delete(Long) : Result<Void>
+  }
+  class SysMenuController {
+    + list(String) : Result<List<SysMenu>>
+    + create(SysMenuCreateDTO) : Result<SysMenu>
+    + update(Long, SysMenuUpdateDTO) : Result<SysMenu>
+    + delete(Long) : Result<Void>
+  }
+  class SysRoleMenuController {
+    + list(Long) : Result<List<Long>>
+    + save(Long, RoleMenuSaveDTO) : Result<Void>
+  }
+}
+
+package com.example.demo.entity {
+  class Department {
+    - Long id
+    - String name
+    - String code
+    - String description
+    - LocalDateTime createdAt
+    - LocalDateTime updatedAt
+  }
+  class Position {
+    - Long id
+    - String name
+    - String code
+    - String description
+    - LocalDateTime createdAt
+    - LocalDateTime updatedAt
+  }
+  class Employee {
+    - Long id
+    - String employeeNo
+    - String name
+    - String gender
+    - String phone
+    - String email
+    - Long departmentId
+    - Long positionId
+    - LocalDate hireDate
+    - String status
+    - LocalDateTime createdAt
+    - LocalDateTime updatedAt
+  }
+  class PositionTransfer {
+    - Long id
+    - Long employeeId
+    - Long fromPositionId
+    - Long toPositionId
+    - LocalDate transferDate
+    - String reason
+    - LocalDateTime createdAt
+  }
+  class EmployeeLeave {
+    - Long id
+    - Long employeeId
+    - String employeeNo
+    - String employeeName
+    - Long departmentId
+    - Long positionId
+    - String gender
+    - String phone
+    - String email
+    - LocalDate hireDate
+    - String roleCode
+    - LocalDate leaveDate
+    - String reason
+    - LocalDateTime createdAt
+  }
+  class SysUser {
+    - Long id
+    - String username
+    - String password
+    - Long roleId
+    - String roleCode
+    - Long employeeId
+    - Integer status
+    - LocalDateTime createdAt
+    - LocalDateTime updatedAt
+  }
+  class SysRole {
+    - Long id
+    - String roleName
+    - String roleCode
+    - Integer roleLevel
+    - Integer roleSort
+    - Integer status
+  }
+  class SysMenu {
+    - Long id
+    - String menuName
+    - String menuType
+    - String path
+    - String component
+    - String perms
+    - Long parentId
+    - Integer orderNum
+    - Integer status
+  }
+  class SysRoleMenu {
+    - Long roleId
+    - Long menuId
+  }
+}
+
+package com.example.demo.service {
+  interface AuthService {
+    + authenticate(String, String) : SysUser
+  }
+  interface DepartmentService {
+    + page(String, int, int) : Page<Department>
+    + listAll() : List<Department>
+    + create(DepartmentCreateDTO) : Department
+    + update(Long, DepartmentUpdateDTO) : Department
+    + delete(Long) : void
+  }
+  interface PositionService {
+    + page(String, int, int) : Page<Position>
+    + listAll() : List<Position>
+    + create(PositionCreateDTO) : Position
+    + update(Long, PositionUpdateDTO) : Position
+    + delete(Long) : void
+  }
+  interface EmployeeService {
+    + page(String, Long, Long, String, int, int) : Page<EmployeeVO>
+    + create(EmployeeCreateDTO) : Employee
+    + update(Long, EmployeeUpdateDTO) : Employee
+    + deleteEmployee(Long) : void
+  }
+  interface PositionTransferService {
+    + create(PositionTransferCreateDTO) : PositionTransfer
+    + page(Long, LocalDate, LocalDate, int, int) : Page<PositionTransferVO>
+  }
+  interface EmployeeLeaveService {
+    + create(EmployeeLeaveCreateDTO) : EmployeeLeave
+    + page(Long, LocalDate, LocalDate, int, int) : Page<EmployeeLeaveVO>
+    + restore(Long) : void
+  }
+  interface ReportService {
+    + hireReport(LocalDate, LocalDate) : List<HireReportVO>
+    + leaveReport(LocalDate, LocalDate) : List<LeaveReportVO>
+    + transferReport(LocalDate, LocalDate) : List<TransferReportVO>
+  }
+  interface SysUserService {
+    + page(String, String, int, int) : Page<SysUserVO>
+    + resetPassword(Long, String) : void
+  }
+  interface SysRoleService {
+    + list(String) : List<SysRole>
+    + create(SysRoleCreateDTO) : SysRole
+    + update(Long, SysRoleUpdateDTO) : SysRole
+    + delete(Long) : void
+  }
+  interface SysMenuService {
+    + list(String) : List<SysMenu>
+    + create(SysMenuCreateDTO) : SysMenu
+    + update(Long, SysMenuUpdateDTO) : SysMenu
+    + delete(Long) : void
+  }
+  interface SysRoleMenuService {
+    + getMenuIds(Long) : List<Long>
+    + saveRoleMenus(Long, List<Long>) : void
+  }
+}
+
+package com.example.demo.vo {
+  class LoginUserInfo {
+    - Long id
+    - String username
+    - String roleCode
+    - Integer roleLevel
+    - String roleName
+    - Long employeeId
+  }
+  class LoginResponse {
+    - LoginUserInfo user
+    - List<SysMenu> menus
+    - List<String> permissions
+  }
+  class EmployeeVO {
+    - Long id
+    - String employeeNo
+    - String name
+    - String gender
+    - String phone
+    - String email
+    - Long departmentId
+    - String departmentName
+    - Long positionId
+    - String positionName
+    - LocalDate hireDate
+    - String status
+  }
+  class EmployeeLeaveVO {
+    - Long id
+    - Long employeeId
+    - String employeeNo
+    - String employeeName
+    - LocalDate leaveDate
+    - String reason
+  }
+  class PositionTransferVO {
+    - Long id
+    - Long employeeId
+    - String employeeName
+    - Long fromPositionId
+    - String fromPositionName
+    - Long toPositionId
+    - String toPositionName
+    - LocalDate transferDate
+    - String reason
+  }
+  class SysUserVO {
+    - Long id
+    - String username
+    - String roleCode
+    - String roleName
+    - Integer roleLevel
+    - Long employeeId
+    - String employeeNo
+    - String employeeName
+    - Integer status
+    - LocalDateTime createdAt
+    - LocalDateTime updatedAt
+  }
+  class HireReportVO
+  class LeaveReportVO
+  class TransferReportVO
+}
+
+AuthService <|.. com.example.demo.service.impl.AuthServiceImpl
+DepartmentService <|.. com.example.demo.service.impl.DepartmentServiceImpl
+PositionService <|.. com.example.demo.service.impl.PositionServiceImpl
+EmployeeService <|.. com.example.demo.service.impl.EmployeeServiceImpl
+PositionTransferService <|.. com.example.demo.service.impl.PositionTransferServiceImpl
+EmployeeLeaveService <|.. com.example.demo.service.impl.EmployeeLeaveServiceImpl
+ReportService <|.. com.example.demo.service.impl.ReportServiceImpl
+SysUserService <|.. com.example.demo.service.impl.SysUserServiceImpl
+SysRoleService <|.. com.example.demo.service.impl.SysRoleServiceImpl
+SysMenuService <|.. com.example.demo.service.impl.SysMenuServiceImpl
+SysRoleMenuService <|.. com.example.demo.service.impl.SysRoleMenuServiceImpl
+@enduml

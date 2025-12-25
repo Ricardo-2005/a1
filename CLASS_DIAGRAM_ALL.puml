@@ -1,0 +1,177 @@
+@startuml
+hide empty members
+skinparam classAttributeIconSize 0
+
+package com.example.demo {
+  class DemoApplication
+}
+
+package com.example.demo.common {
+  class AuthInterceptor
+  class DataInitializer
+  class GlobalExceptionHandler
+  class Result
+  class SessionKeys
+  class WebConfig
+}
+
+package com.example.demo.common.enums {
+  enum EmployeeStatus
+}
+
+package com.example.demo.controller {
+  class AuthController
+  class DepartmentController
+  class EmployeeController
+  class EmployeeLeaveController
+  class EmployeeProfileController
+  class PositionController
+  class PositionTransferController
+  class ReportController
+  class SysMenuController
+  class SysRoleController
+  class SysRoleMenuController
+  class SysUserController
+}
+
+package com.example.demo.dto {
+  class DepartmentCreateDTO
+  class DepartmentUpdateDTO
+  class EmployeeCreateDTO
+  class EmployeeUpdateDTO
+  class EmployeeLeaveCreateDTO
+  class LoginRequest
+  class PositionCreateDTO
+  class PositionUpdateDTO
+  class PositionTransferCreateDTO
+  class ResetPasswordDTO
+  class RoleMenuSaveDTO
+  class SysMenuCreateDTO
+  class SysMenuUpdateDTO
+  class SysRoleCreateDTO
+  class SysRoleUpdateDTO
+}
+
+package com.example.demo.entity {
+  class Department
+  class Employee
+  class EmployeeLeave
+  class Position
+  class PositionTransfer
+  class SysMenu
+  class SysRole
+  class SysRoleMenu
+  class SysUser
+}
+
+package com.example.demo.mapper {
+  interface DepartmentMapper
+  interface EmployeeLeaveMapper
+  interface EmployeeMapper
+  interface PositionMapper
+  interface PositionTransferMapper
+  interface SysMenuMapper
+  interface SysRoleMapper
+  interface SysRoleMenuMapper
+  interface SysUserMapper
+}
+
+package com.example.demo.service {
+  interface AuthService
+  interface DepartmentService
+  interface EmployeeLeaveService
+  interface EmployeeService
+  interface PositionService
+  interface PositionTransferService
+  interface ReportService
+  interface SysMenuService
+  interface SysRoleMenuService
+  interface SysRoleService
+  interface SysUserService
+}
+
+package com.example.demo.service.impl {
+  class AuthServiceImpl
+  class DepartmentServiceImpl
+  class EmployeeLeaveServiceImpl
+  class EmployeeServiceImpl
+  class PositionServiceImpl
+  class PositionTransferServiceImpl
+  class ReportServiceImpl
+  class SysMenuServiceImpl
+  class SysRoleMenuServiceImpl
+  class SysRoleServiceImpl
+  class SysUserServiceImpl
+}
+
+package com.example.demo.vo {
+  class EmployeeLeaveVO
+  class EmployeeVO
+  class HireReportVO
+  class LeaveReportVO
+  class LoginResponse
+  class LoginUserInfo
+  class PositionTransferVO
+  class SysUserVO
+  class TransferReportVO
+}
+
+AuthService <|.. AuthServiceImpl
+DepartmentService <|.. DepartmentServiceImpl
+EmployeeLeaveService <|.. EmployeeLeaveServiceImpl
+EmployeeService <|.. EmployeeServiceImpl
+PositionService <|.. PositionServiceImpl
+PositionTransferService <|.. PositionTransferServiceImpl
+ReportService <|.. ReportServiceImpl
+SysMenuService <|.. SysMenuServiceImpl
+SysRoleMenuService <|.. SysRoleMenuServiceImpl
+SysRoleService <|.. SysRoleServiceImpl
+SysUserService <|.. SysUserServiceImpl
+
+WebConfig --> AuthInterceptor
+AuthInterceptor --> SessionKeys
+DataInitializer --> DepartmentMapper
+DataInitializer --> PositionMapper
+DataInitializer --> EmployeeMapper
+DataInitializer --> SysUserMapper
+DataInitializer --> SysRoleMapper
+
+AuthController --> AuthService
+AuthController --> SysRoleMapper
+AuthController --> SysMenuMapper
+DepartmentController --> DepartmentService
+EmployeeController --> EmployeeService
+EmployeeLeaveController --> EmployeeLeaveService
+EmployeeProfileController --> EmployeeMapper
+PositionController --> PositionService
+PositionTransferController --> PositionTransferService
+ReportController --> ReportService
+SysMenuController --> SysMenuService
+SysRoleController --> SysRoleService
+SysRoleMenuController --> SysRoleMenuService
+SysUserController --> SysUserService
+
+AuthServiceImpl --> SysUserMapper
+DepartmentServiceImpl --> DepartmentMapper
+EmployeeServiceImpl --> EmployeeMapper
+EmployeeServiceImpl --> DepartmentMapper
+EmployeeServiceImpl --> PositionMapper
+EmployeeServiceImpl --> SysUserMapper
+EmployeeServiceImpl --> SysRoleMapper
+EmployeeServiceImpl --> PositionTransferMapper
+EmployeeLeaveServiceImpl --> EmployeeLeaveMapper
+EmployeeLeaveServiceImpl --> EmployeeMapper
+EmployeeLeaveServiceImpl --> SysUserMapper
+EmployeeLeaveServiceImpl --> SysRoleMapper
+PositionServiceImpl --> PositionMapper
+PositionTransferServiceImpl --> PositionTransferMapper
+PositionTransferServiceImpl --> EmployeeMapper
+PositionTransferServiceImpl --> PositionMapper
+ReportServiceImpl --> EmployeeMapper
+ReportServiceImpl --> EmployeeLeaveMapper
+ReportServiceImpl --> PositionTransferMapper
+SysUserServiceImpl --> SysUserMapper
+SysRoleServiceImpl --> SysRoleMapper
+SysMenuServiceImpl --> SysMenuMapper
+SysRoleMenuServiceImpl --> SysRoleMenuMapper
+@enduml
