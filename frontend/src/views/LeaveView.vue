@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import PageHeader from '@/components/PageHeader.vue'
 import { fetchEmployees } from '@/api/employee'
-import { createLeave, fetchLeaves, restoreLeave } from '@/api/leave'
+import { createLeave, fetchLeaves } from '@/api/leave'
 import type { EmployeeLeaveVO, EmployeeVO } from '@/api/types'
 import { useAuthStore } from '@/store/auth'
 
@@ -43,7 +43,6 @@ const rules = {
 }
 
 const canAdd = computed(() => authStore.hasPerm('system:leave:add'))
-const canRestore = computed(() => authStore.hasPerm('system:leave:restore'))
 
 const loadEmployees = async () => {
   const res = await fetchEmployees({ page: 1, size: 200 })
@@ -112,15 +111,6 @@ const submit = async () => {
   }
 }
 
-const restoreItem = async (row: EmployeeLeaveVO) => {
-  const res = await restoreLeave(row.id)
-  if (res.code === 0) {
-    ElMessage.success('已恢复在职')
-    await Promise.all([loadEmployees(), loadData()])
-  } else {
-    ElMessage.error(res.message)
-  }
-}
 
 onMounted(async () => {
   await Promise.all([loadEmployees(), loadData()])
@@ -170,11 +160,7 @@ onMounted(async () => {
       </el-table-column>
       <el-table-column prop="leaveDate" label="离职日期" width="140" />
       <el-table-column prop="reason" label="离职原因" />
-      <el-table-column label="操作" width="140">
-        <template #default="scope">
-          <el-button v-if="canRestore" size="small" @click="restoreItem(scope.row)">恢复在职</el-button>
-        </template>
-      </el-table-column>
+
     </el-table>
 
     <div class="pagination">

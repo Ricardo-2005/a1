@@ -68,16 +68,16 @@ public interface EmployeeLeaveMapper extends BaseMapper<EmployeeLeave> {
 
     @Select("""
         <script>
-        SELECT e.employee_no AS employeeNo,
-               e.name AS name,
+        SELECT COALESCE(e.employee_no, l.employee_no) AS employeeNo,
+               COALESCE(e.name, l.employee_name) AS name,
                d.name AS departmentName,
                p.name AS positionName,
                l.leave_date AS leaveDate,
                l.reason AS reason
         FROM employee_leave l
         LEFT JOIN employee e ON l.employee_id = e.id
-        LEFT JOIN department d ON e.department_id = d.id
-        LEFT JOIN job_position p ON e.position_id = p.id
+        LEFT JOIN department d ON d.id = COALESCE(e.department_id, l.department_id)
+        LEFT JOIN job_position p ON p.id = COALESCE(e.position_id, l.position_id)
         <where>
             <if test='startDate != null'>
                 AND l.leave_date &gt;= #{startDate}
