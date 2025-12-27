@@ -55,6 +55,9 @@ public class EmployeeLeaveServiceImpl implements EmployeeLeaveService {
         if (employee == null) {
             throw new IllegalArgumentException("Employee not found");
         }
+        if (EmployeeStatus.LEFT.name().equals(employee.getStatus())) {
+            throw new IllegalArgumentException("Employee already left");
+        }
         SysUser sysUser = sysUserMapper.selectOneByQuery(
                 QueryWrapper.create()
                         .from("sys_user")
@@ -82,7 +85,9 @@ public class EmployeeLeaveServiceImpl implements EmployeeLeaveService {
         if (sysUser != null) {
             sysUserMapper.deleteByEmployeeId(employee.getId());
         }
-        employeeMapper.deleteById(employee.getId());
+        employee.setStatus(EmployeeStatus.LEFT.name());
+        employee.setUpdatedAt(LocalDateTime.now());
+        employeeMapper.update(employee);
         return leave;
     }
 
@@ -111,38 +116,56 @@ public class EmployeeLeaveServiceImpl implements EmployeeLeaveService {
         if (leave == null) {
             throw new IllegalArgumentException("Leave record not found");
         }
-        Employee existing = employeeMapper.selectOneByQuery(
-                QueryWrapper.create()
-                        .from("employee")
-                        .where("employee_no = ?", leave.getEmployeeNo()));
-        if (existing != null) {
-            throw new IllegalArgumentException("Employee already exists");
+        Employee employee = null;
+        if (leave.getEmployeeId() != null) {
+            employee = employeeMapper.selectOneById(leave.getEmployeeId());
         }
-        if (leave.getEmployeeNo() == null || leave.getEmployeeName() == null) {
-            throw new IllegalArgumentException("Leave record missing snapshot");
+        if (employee == null && leave.getEmployeeNo() != null) {
+            employee = employeeMapper.selectOneByQuery(
+                    QueryWrapper.create()
+                            .from("employee")
+                            .where("employee_no = ?", leave.getEmployeeNo()));
         }
-        if (leave.getDepartmentId() == null || leave.getPositionId() == null) {
-            throw new IllegalArgumentException("Leave record missing position data");
+        if (employee != null) {
+            if (EmployeeStatus.ACTIVE.name().equals(employee.getStatus())) {
+                throw new IllegalArgumentException("Employee already active");
+            }
+            if (departmentMapper.selectOneById(employee.getDepartmentId()) == null) {
+                throw new IllegalArgumentException("Department not found");
+            }
+            if (positionMapper.selectOneById(employee.getPositionId()) == null) {
+                throw new IllegalArgumentException("Position not found");
+            }
+            employee.setStatus(EmployeeStatus.ACTIVE.name());
+            employee.setUpdatedAt(LocalDateTime.now());
+            employeeMapper.update(employee);
+        } else {
+            if (leave.getEmployeeNo() == null || leave.getEmployeeName() == null) {
+                throw new IllegalArgumentException("Leave record missing snapshot");
+            }
+            if (leave.getDepartmentId() == null || leave.getPositionId() == null) {
+                throw new IllegalArgumentException("Leave record missing position data");
+            }
+            if (departmentMapper.selectOneById(leave.getDepartmentId()) == null) {
+                throw new IllegalArgumentException("Department not found");
+            }
+            if (positionMapper.selectOneById(leave.getPositionId()) == null) {
+                throw new IllegalArgumentException("Position not found");
+            }
+            employee = new Employee();
+            employee.setEmployeeNo(leave.getEmployeeNo());
+            employee.setName(leave.getEmployeeName());
+            employee.setGender(leave.getGender());
+            employee.setPhone(leave.getPhone());
+            employee.setEmail(leave.getEmail());
+            employee.setDepartmentId(leave.getDepartmentId());
+            employee.setPositionId(leave.getPositionId());
+            employee.setHireDate(leave.getHireDate() != null ? leave.getHireDate() : LocalDate.now());
+            employee.setStatus(EmployeeStatus.ACTIVE.name());
+            employee.setCreatedAt(LocalDateTime.now());
+            employee.setUpdatedAt(LocalDateTime.now());
+            employeeMapper.insert(employee);
         }
-        if (departmentMapper.selectOneById(leave.getDepartmentId()) == null) {
-            throw new IllegalArgumentException("Department not found");
-        }
-        if (positionMapper.selectOneById(leave.getPositionId()) == null) {
-            throw new IllegalArgumentException("Position not found");
-        }
-        Employee employee = new Employee();
-        employee.setEmployeeNo(leave.getEmployeeNo());
-        employee.setName(leave.getEmployeeName());
-        employee.setGender(leave.getGender());
-        employee.setPhone(leave.getPhone());
-        employee.setEmail(leave.getEmail());
-        employee.setDepartmentId(leave.getDepartmentId());
-        employee.setPositionId(leave.getPositionId());
-        employee.setHireDate(leave.getHireDate() != null ? leave.getHireDate() : LocalDate.now());
-        employee.setStatus(EmployeeStatus.ACTIVE.name());
-        employee.setCreatedAt(LocalDateTime.now());
-        employee.setUpdatedAt(LocalDateTime.now());
-        employeeMapper.insert(employee);
 
         String roleCode = leave.getRoleCode();
         SysRole role = null;
@@ -155,16 +178,28 @@ public class EmployeeLeaveServiceImpl implements EmployeeLeaveService {
         if (role == null) {
             throw new IllegalArgumentException("Employee role not found");
         }
-        SysUser user = new SysUser();
-        user.setUsername(employee.getEmployeeNo());
-        user.setPassword(DEFAULT_PASSWORD);
-        user.setRoleId(role.getId());
-        user.setRoleCode(role.getRoleCode());
-        user.setEmployeeId(employee.getId());
-        user.setStatus(1);
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
-        sysUserMapper.insert(user);
+        SysUser existingUser = sysUserMapper.selectOneByQuery(
+                QueryWrapper.create()
+                        .from("sys_user")
+                        .where("employee_id = ?", employee.getId()));
+        if (existingUser == null) {
+            SysUser user = new SysUser();
+            user.setUsername(employee.getEmployeeNo());
+            user.setPassword(DEFAULT_PASSWORD);
+            user.setRoleId(role.getId());
+            user.setRoleCode(role.getRoleCode());
+            user.setEmployeeId(employee.getId());
+            user.setStatus(1);
+            user.setCreatedAt(LocalDateTime.now());
+            user.setUpdatedAt(LocalDateTime.now());
+            sysUserMapper.insert(user);
+        } else {
+            existingUser.setRoleId(role.getId());
+            existingUser.setRoleCode(role.getRoleCode());
+            existingUser.setStatus(1);
+            existingUser.setUpdatedAt(LocalDateTime.now());
+            sysUserMapper.update(existingUser);
+        }
 
         employeeLeaveMapper.deleteById(leaveId);
     }

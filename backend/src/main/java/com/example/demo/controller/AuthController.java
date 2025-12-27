@@ -82,6 +82,7 @@ public class AuthController {
         }
         List<SysMenu> menus = sysMenuMapper.selectMenusByRoleId(role.getId());
         List<String> permissions = sysMenuMapper.selectPermsByRoleId(role.getId());
+        session.setAttribute(SessionKeys.PERMISSIONS, permissions);
         LoginUserInfo userInfo = new LoginUserInfo(
                 Long.valueOf(String.valueOf(userId)),
                 String.valueOf(username),

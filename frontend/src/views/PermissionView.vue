@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth'
 import { createRole, deleteRole, fetchRoles, updateRole } from '@/api/role'
 import { createMenu, deleteMenu, fetchMenus, updateMenu } from '@/api/menu'
 import { fetchRoleMenus, saveRoleMenus } from '@/api/roleMenu'
+import { fetchMe } from '@/api/auth'
 import type { SysMenu, SysRole } from '@/api/types'
 
 type MenuNode = SysMenu & { children?: MenuNode[] }
@@ -29,6 +30,9 @@ const menuQuery = reactive({
 const permsLoading = ref(false)
 const selectedRoleId = ref<number>()
 const menuTreeRef = ref()
+
+let isSyncingChecks = false
+let isAdjustingChecks = false
 
 const canRoleAdd = computed(() => authStore.hasPerm('system:role:add'))
 const canRoleEdit = computed(() => authStore.hasPerm('system:role:edit'))
@@ -148,6 +152,72 @@ const menuTypeLabel = (type: SysMenu['menuType']) => {
   return '菜单'
 }
 
+const buildMenuMaps = () => {
+  const menuMap = new Map<number, SysMenu>()
+  const childrenMap = new Map<number, number[]>()
+  menus.value.forEach((menu) => {
+    menuMap.set(menu.id, menu)
+    const parentId = menu.parentId ?? 0
+    if (parentId !== 0) {
+      const list = childrenMap.get(parentId) ?? []
+      list.push(menu.id)
+      childrenMap.set(parentId, list)
+    }
+  })
+  return { menuMap, childrenMap }
+}
+
+const collectDescendants = (rootId: number, childrenMap: Map<number, number[]>) => {
+  const result: number[] = []
+  const stack = [rootId]
+  while (stack.length > 0) {
+    const current = stack.pop() as number
+    const children = childrenMap.get(current)
+    if (!children || children.length === 0) {
+      continue
+    }
+    for (const child of children) {
+      result.push(child)
+      stack.push(child)
+    }
+  }
+  return result
+}
+
+const handleMenuCheckChange = (data: SysMenu, checked: boolean) => {
+  if (isSyncingChecks || isAdjustingChecks) {
+    return
+  }
+  const { menuMap, childrenMap } = buildMenuMaps()
+  if (checked) {
+    const checkedSet = new Set<number>((menuTreeRef.value?.getCheckedKeys?.() ?? []) as number[])
+    let current = menuMap.get(data.id)
+    while (current && current.parentId && current.parentId !== 0) {
+      const parentId = current.parentId
+      if (!checkedSet.has(parentId)) {
+        isAdjustingChecks = true
+        menuTreeRef.value?.setChecked(data.id, false, false)
+        isAdjustingChecks = false
+        ElMessage.warning('请先勾选上级菜单')
+        return
+      }
+      current = menuMap.get(parentId)
+    }
+    isAdjustingChecks = true
+    const descendants = collectDescendants(data.id, childrenMap)
+    for (const id of descendants) {
+      menuTreeRef.value?.setChecked(id, true, false)
+    }
+    isAdjustingChecks = false
+    return
+  }
+  isAdjustingChecks = true
+  const descendants = collectDescendants(data.id, childrenMap)
+  for (const id of descendants) {
+    menuTreeRef.value?.setChecked(id, false, false)
+  }
+  isAdjustingChecks = false
+}
 const loadRoles = async () => {
   roleLoading.value = true
   try {
@@ -192,7 +262,25 @@ const loadRoleMenus = async () => {
     const res = await fetchRoleMenus(selectedRoleId.value)
     if (res.code === 0) {
       await nextTick()
-      menuTreeRef.value?.setCheckedKeys(res.data ?? [])
+      const menuIds = res.data ?? []
+      const menuMap = new Map<number, SysMenu>()
+      menus.value.forEach((menu) => {
+        menuMap.set(menu.id, menu)
+      })
+      const selectedSet = new Set(menuIds)
+      const normalized = menuIds.filter((id) => {
+        let current = menuMap.get(id)
+        while (current && current.parentId && current.parentId !== 0) {
+          if (!selectedSet.has(current.parentId)) {
+            return false
+          }
+          current = menuMap.get(current.parentId)
+        }
+        return true
+      })
+      isSyncingChecks = true
+      menuTreeRef.value?.setCheckedKeys(normalized)
+      isSyncingChecks = false
     } else {
       ElMessage.error(res.message)
     }
@@ -333,6 +421,14 @@ const saveRoleMenu = async () => {
   const res = await saveRoleMenus(selectedRoleId.value, menuIds)
   if (res.code === 0) {
     ElMessage.success('权限已保存')
+    await loadRoleMenus()
+    const currentRole = roles.value.find((role) => role.id === selectedRoleId.value)
+    if (currentRole && currentRole.roleCode === authStore.roleCode) {
+      const meRes = await fetchMe()
+      if (meRes.code === 0) {
+        authStore.setUser(meRes.data)
+      }
+    }
   } else {
     ElMessage.error(res.message)
   }
@@ -463,6 +559,8 @@ onMounted(async () => {
             :data="menuTree"
             node-key="id"
             show-checkbox
+            :check-strictly="true"
+            @check-change="handleMenuCheckChange"
             default-expand-all
             :default-expanded-keys="expandedMenuIds"
             :props="{ label: 'menuName', children: 'children' }"

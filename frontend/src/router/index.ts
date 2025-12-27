@@ -14,6 +14,14 @@ import ForbiddenView from '@/views/ForbiddenView.vue'
 import PermissionView from '@/views/PermissionView.vue'
 import { useAuthStore } from '@/store/auth'
 
+const pickFirstAllowedPath = (menus: Array<{ path?: string; menuType?: string; status?: number; orderNum?: number }>, prefix: string) => {
+  const candidates = menus
+    .filter((menu) => menu.menuType !== 'F' && menu.status !== 0)
+    .filter((menu) => (menu.path ?? '').startsWith(prefix) && Boolean(menu.path))
+    .sort((a, b) => (a.orderNum ?? 0) - (b.orderNum ?? 0))
+  return candidates[0]?.path
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -112,9 +120,15 @@ router.beforeEach((to) => {
   if (!authStore.isLoggedIn) {
     return { path: '/login' }
   }
+  if (to.path === '/admin' || to.path === '/employee') {
+    const fallback = pickFirstAllowedPath(authStore.menus, to.path)
+    return { path: fallback ?? '/403' }
+  }
   const requiredPerm = to.matched.find((record) => record.meta.perm)?.meta.perm as string | undefined
   if (requiredPerm && !authStore.hasPerm(requiredPerm)) {
-    return { path: '/403' }
+    const prefix = to.path.startsWith('/employee') ? '/employee' : '/admin'
+    const fallback = pickFirstAllowedPath(authStore.menus, prefix)
+    return { path: fallback ?? '/403' }
   }
   return true
 })

@@ -36,7 +36,7 @@ CREATE TABLE employee (
     INDEX idx_employee_department (department_id),
     INDEX idx_employee_position (position_id),
     INDEX idx_employee_status (status),
-    CONSTRAINT fk_employee_department FOREIGN KEY (department_id) REFERENCES department(id),
+    CONSTRAINT fk_employee_department FOREIGN KEY (department_id) REFERENCES department(id) ON DELETE CASCADE,
     CONSTRAINT fk_employee_position FOREIGN KEY (position_id) REFERENCES job_position(id)
 );
 
@@ -83,7 +83,7 @@ CREATE TABLE sys_user (
     INDEX idx_sys_user_employee (employee_id),
     INDEX idx_sys_user_role (role_id),
     CONSTRAINT fk_sys_user_role FOREIGN KEY (role_id) REFERENCES sys_role(id),
-    CONSTRAINT fk_sys_user_employee FOREIGN KEY (employee_id) REFERENCES employee(id)
+    CONSTRAINT fk_sys_user_employee FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE
 );
 
 CREATE TABLE position_transfer (
@@ -96,7 +96,7 @@ CREATE TABLE position_transfer (
     created_at DATETIME NOT NULL,
     INDEX idx_transfer_employee (employee_id),
     INDEX idx_transfer_date (transfer_date),
-    CONSTRAINT fk_transfer_employee FOREIGN KEY (employee_id) REFERENCES employee(id),
+    CONSTRAINT fk_transfer_employee FOREIGN KEY (employee_id) REFERENCES employee(id) ON DELETE CASCADE,
     CONSTRAINT fk_transfer_from_position FOREIGN KEY (from_position_id) REFERENCES job_position(id),
     CONSTRAINT fk_transfer_to_position FOREIGN KEY (to_position_id) REFERENCES job_position(id)
 );
